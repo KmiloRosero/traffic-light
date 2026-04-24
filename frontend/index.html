@@ -311,6 +311,60 @@
       .countdown strong {
         color: var(--text);
       }
+
+      dialog {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(17, 27, 51, 0.98);
+        color: var(--text);
+        box-shadow: var(--shadow);
+        padding: 0;
+        width: min(520px, calc(100% - 28px));
+      }
+
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+      }
+
+      .dialog-header {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 900;
+      }
+
+      .dialog-body {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .dialog-body label {
+        color: var(--muted);
+        font-weight: 800;
+        font-size: 12px;
+      }
+
+      .dialog-body input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        outline: none;
+      }
+
+      .dialog-actions {
+        padding: 12px 14px 14px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.04);
+      }
     </style>
   </head>
   <body>
@@ -346,6 +400,27 @@
       <p>State Pattern | Universidad Cooperativa de Colombia</p>
     </footer>
 
+    <dialog id="add-intersection-dialog" aria-label="Agregar intersección">
+      <div class="dialog-header">Agregar intersección</div>
+      <form id="add-intersection-form" method="dialog">
+        <div class="dialog-body">
+          <label for="intersection-name">Nombre de la intersección</label>
+          <input
+            id="intersection-name"
+            name="intersection-name"
+            type="text"
+            autocomplete="off"
+            placeholder="Ej: Calle 10 & Carrera 5"
+            required
+          />
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" value="cancel" type="submit">Cancelar</button>
+          <button value="confirm" type="submit">Agregar</button>
+        </div>
+      </form>
+    </dialog>
+
     <script>
       const DEFAULT_INTERSECTIONS = [
         "Main St & 1st Ave",
@@ -359,7 +434,7 @@
           durationSeconds: 30,
           description: "ALTO - Los vehículos deben detenerse completamente",
           allowedActions: "Los peatones pueden cruzar",
-          next: "VERDE",
+          next: "AMARILLO",
         },
         VERDE: {
           name: "VERDE",
@@ -373,7 +448,7 @@
           durationSeconds: 5,
           description: "PRECAUCIÓN - Prepárate para detenerte, está por cambiar a rojo",
           allowedActions: "No se permiten nuevos cruces. Finaliza si ya empezaste",
-          next: "ROJO",
+          next: null,
         },
       };
 
@@ -401,6 +476,7 @@
           id: crypto.randomUUID(),
           location,
           state: "ROJO",
+          previousState: null,
           cycleCount: 0,
           remainingSeconds: STATES.ROJO.durationSeconds,
           history: [],
@@ -415,6 +491,7 @@
 
       function transition(light, nextState) {
         const previous = light.state;
+        light.previousState = previous;
         light.state = nextState;
         light.remainingSeconds = STATES[nextState].durationSeconds;
         light.history.push(`${previous} -> ${nextState}`);
@@ -425,6 +502,11 @@
       }
 
       function advance(light) {
+        if (light.state === "AMARILLO") {
+          const nextFromYellow = light.previousState === "ROJO" ? "VERDE" : "ROJO";
+          transition(light, nextFromYellow);
+          return;
+        }
         transition(light, STATES[light.state].next);
       }
 
@@ -526,6 +608,7 @@
         btnReset.addEventListener("click", () => {
           const before = light.state;
           light.state = "ROJO";
+          light.previousState = null;
           light.cycleCount = 0;
           light.remainingSeconds = STATES.ROJO.durationSeconds;
           light.history = [];
@@ -608,6 +691,9 @@
           btnAdvanceAll: byId("btn-advance-all"),
           btnResetAll: byId("btn-reset-all"),
           btnAdd: byId("btn-add-light"),
+          addDialog: byId("add-intersection-dialog"),
+          addForm: byId("add-intersection-form"),
+          addInput: byId("intersection-name"),
         };
 
         ui.btnAdvanceAll.addEventListener("click", () => {
@@ -619,12 +705,40 @@
         ui.btnResetAll.addEventListener("click", resetAll);
 
         ui.btnAdd.addEventListener("click", () => {
-          const location = prompt("Nombre de la intersección:");
-          if (!location) return;
-          const trimmed = location.trim();
-          if (!trimmed) return;
+          if (typeof ui.addDialog.showModal !== "function") {
+            const location = prompt("Nombre de la intersección:");
+            if (!location) return;
+            const trimmed = location.trim();
+            if (!trimmed) return;
+            lights.push(createLight(trimmed));
+            addHistory("Intersección agregada: " + trimmed);
+            render();
+            return;
+          }
+
+          ui.addInput.value = "";
+          ui.addDialog.showModal();
+          setTimeout(() => ui.addInput.focus(), 0);
+        });
+
+        ui.addForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+
+          const action = event.submitter?.value;
+          if (action !== "confirm") {
+            ui.addDialog.close();
+            return;
+          }
+
+          const trimmed = ui.addInput.value.trim();
+          if (!trimmed) {
+            ui.addInput.focus();
+            return;
+          }
+
           lights.push(createLight(trimmed));
           addHistory("Intersección agregada: " + trimmed);
+          ui.addDialog.close();
           render();
         });
 
