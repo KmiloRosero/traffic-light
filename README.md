@@ -36,11 +36,3 @@ java -cp out com.trafficlight.Main
 ```powershell
 java -cp out com.trafficlight.ui.SimulatorMain
 ```
-
-## Notas
-
-- Si compilaste anteriormente dentro de `src/main/java`, puede que veas archivos `.class` ahí; se pueden eliminar sin problema.
-
-## Autor / Curso
-
-State Pattern | Universidad Cooperativa de Colombia
