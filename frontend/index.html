@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Semáforo - Simulador del Patrón State</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: rgba(17, 27, 51, 0.92);
+        --text: #e9eefc;
+        --muted: #b8c4e6;
+        --border: rgba(255, 255, 255, 0.12);
+        --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+
+        --red: #ff0000;
+        --yellow: #ffc300;
+        --green: #00c851;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 700px at 20% 0%, #1b2b57 0%, var(--bg) 55%);
+        color: var(--text);
+      }
+
+      header {
+        padding: 28px 18px 18px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(17, 27, 51, 0.55);
+        backdrop-filter: blur(8px);
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 18px auto 36px;
+        padding: 0 18px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .controls {
+        padding: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .controls .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      #traffic-lights-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+        padding: 14px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.18);
+      }
+
+      .card header {
+        padding: 12px 12px 10px;
+        border-bottom: 1px solid var(--border);
+        background: transparent;
+        backdrop-filter: none;
+      }
+
+      .location {
+        font-weight: 800;
+      }
+
+      .meta {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .body {
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 12px;
+      }
+
+      .light {
+        width: 92px;
+        height: 170px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 10px;
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+      }
+
+      .bulb {
+        width: 52px;
+        height: 52px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+      }
+
+      .details {
+        display: grid;
+        gap: 10px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        width: fit-content;
+      }
+
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+
+      .kv {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .kv strong {
+        color: var(--text);
+      }
+
+      .state-controls {
+        padding: 12px;
+        border-top: 1px solid var(--border);
+        display: grid;
+        gap: 10px;
+      }
+
+      .radio-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .radio-row input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .radio-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        cursor: pointer;
+        user-select: none;
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+
+      .dot.red {
+        background: var(--red);
+      }
+      .dot.yellow {
+        background: var(--yellow);
+      }
+      .dot.green {
+        background: var(--green);
+      }
+
+      .history {
+        padding: 14px;
+      }
+
+      .history h2 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .history ol {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+      }
+
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 18px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 520px) {
+        .body {
+          grid-template-columns: 1fr;
+        }
+        .light {
+          width: 100%;
+          height: auto;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+        }
+      }
+
+      .bulb.on {
+        border: 1px solid rgba(255, 255, 255, 0.28);
+      }
+
+      .bulb.red.on {
+        background: var(--red);
+        box-shadow: 0 0 26px rgba(255, 0, 0, 0.55);
+      }
+      .bulb.yellow.on {
+        background: var(--yellow);
+        box-shadow: 0 0 26px rgba(255, 195, 0, 0.55);
+      }
+      .bulb.green.on {
+        background: var(--green);
+        box-shadow: 0 0 26px rgba(0, 200, 81, 0.55);
+      }
+
+      .countdown {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+        font-weight: 800;
+        font-size: 12px;
+        width: fit-content;
+      }
+
+      .countdown strong {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1>🚦 Semáforo con Patrón State</h1>
+        <p class="subtitle">Patrones de Diseño - Ingeniería de Software</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel" aria-label="Controles">
+        <div class="controls">
+          <div class="buttons">
+            <button id="btn-advance-all" type="button">Avanzar todos</button>
+            <button id="btn-reset-all" type="button">Reiniciar todo</button>
+            <button id="btn-add-light" type="button">+ Agregar intersección</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Semáforos">
+        <div id="traffic-lights-container"></div>
+      </section>
+
+      <section id="history-panel" class="panel history" aria-label="Historial">
+        <h2>Historial de cambios de estado</h2>
+        <ol id="history-log" aria-live="polite"></ol>
+      </section>
+    </main>
+
+    <footer>
+      <p>State Pattern | Universidad Cooperativa de Colombia</p>
+    </footer>
+
+    <script>
+      const DEFAULT_INTERSECTIONS = [
+        "Main St & 1st Ave",
+        "Park Ave & 5th St",
+        "Central Blvd & Oak Rd",
+      ];
+
+      const STATES = {
+        ROJO: {
+          name: "ROJO",
+          durationSeconds: 30,
+          description: "ALTO - Los vehículos deben detenerse completamente",
+          allowedActions: "Los peatones pueden cruzar",
+          next: "VERDE",
+        },
+        VERDE: {
+          name: "VERDE",
+          durationSeconds: 25,
+          description: "SIGA - Los vehículos pueden pasar por la intersección",
+          allowedActions: "Los vehículos pueden avanzar. Los peatones deben esperar",
+          next: "AMARILLO",
+        },
+        AMARILLO: {
+          name: "AMARILLO",
+          durationSeconds: 5,
+          description: "PRECAUCIÓN - Prepárate para detenerte, está por cambiar a rojo",
+          allowedActions: "No se permiten nuevos cruces. Finaliza si ya empezaste",
+          next: "ROJO",
+        },
+      };
+
+      function byId(id) {
+        const el = document.getElementById(id);
+        if (!el) throw new Error(`Falta el elemento #${id}`);
+        return el;
+      }
+
+      function nowTime() {
+        return new Date().toLocaleTimeString(undefined, { hour12: false });
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function createLight(location) {
+        return {
+          id: crypto.randomUUID(),
+          location,
+          state: "ROJO",
+          cycleCount: 0,
+          remainingSeconds: STATES.ROJO.durationSeconds,
+          history: [],
+        };
+      }
+
+      function addHistory(message) {
+        const li = document.createElement("li");
+        li.textContent = `[${nowTime()}] ${message}`;
+        ui.historyLog.prepend(li);
+      }
+
+      function transition(light, nextState) {
+        const previous = light.state;
+        light.state = nextState;
+        light.remainingSeconds = STATES[nextState].durationSeconds;
+        light.history.push(`${previous} -> ${nextState}`);
+        if (nextState === "ROJO") {
+          light.cycleCount += 1;
+        }
+        addHistory(`${light.location}: ${previous} → ${nextState}`);
+      }
+
+      function advance(light) {
+        transition(light, STATES[light.state].next);
+      }
+
+      let lights = [];
+      let ui;
+      let timerId = null;
+
+      function render() {
+        ui.container.replaceChildren();
+        for (const light of lights) {
+          ui.container.appendChild(createCard(light));
+        }
+      }
+
+      function createCard(light) {
+        const def = STATES[light.state];
+
+        const card = document.createElement("article");
+        card.className = "card";
+        card.setAttribute("aria-label", light.location);
+        card.dataset.lightId = light.id;
+
+        const header = document.createElement("header");
+        const location = document.createElement("div");
+        location.className = "location";
+        location.textContent = light.location;
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = `Ciclos: ${light.cycleCount}`;
+        header.appendChild(location);
+        header.appendChild(meta);
+
+        const body = document.createElement("div");
+        body.className = "body";
+
+        const lightBox = document.createElement("div");
+        lightBox.className = "light";
+        lightBox.setAttribute("aria-hidden", "true");
+
+        const redBulb = document.createElement("div");
+        redBulb.className = `bulb red ${light.state === "ROJO" ? "on" : ""}`.trim();
+        const yellowBulb = document.createElement("div");
+        yellowBulb.className = `bulb yellow ${light.state === "AMARILLO" ? "on" : ""}`.trim();
+        const greenBulb = document.createElement("div");
+        greenBulb.className = `bulb green ${light.state === "VERDE" ? "on" : ""}`.trim();
+        lightBox.appendChild(redBulb);
+        lightBox.appendChild(yellowBulb);
+        lightBox.appendChild(greenBulb);
+
+        const details = document.createElement("div");
+        details.className = "details";
+
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        const swatch = document.createElement("span");
+        swatch.className = "swatch";
+        swatch.style.background =
+          light.state === "ROJO" ? "var(--red)" : light.state === "VERDE" ? "var(--green)" : "var(--yellow)";
+        const badgeText = document.createElement("span");
+        badgeText.innerHTML =
+          `<span class="state-name">${escapeHtml(def.name)}</span> • <span class="state-duration">${def.durationSeconds}s</span>`;
+        badge.appendChild(swatch);
+        badge.appendChild(badgeText);
+
+        const kv = document.createElement("div");
+        kv.className = "kv";
+        kv.innerHTML =
+          `<div><strong>Descripción:</strong> <span class="state-desc">${escapeHtml(def.description)}</span></div>` +
+          `<div><strong>Acciones permitidas:</strong> <span class="state-allowed">${escapeHtml(def.allowedActions)}</span></div>`;
+
+        details.appendChild(badge);
+
+        const countdown = document.createElement("div");
+        countdown.className = "countdown";
+        countdown.innerHTML = `<span>⏳ Restante:</span> <strong>${light.remainingSeconds}s</strong>`;
+        details.appendChild(countdown);
+
+        details.appendChild(kv);
+
+        body.appendChild(lightBox);
+        body.appendChild(details);
+
+        const controls = document.createElement("div");
+        controls.className = "state-controls";
+        const row = document.createElement("div");
+        row.className = "radio-row";
+
+        const btnAdvance = document.createElement("button");
+        btnAdvance.type = "button";
+        btnAdvance.textContent = "Avanzar";
+        btnAdvance.addEventListener("click", () => {
+          advance(light);
+          render();
+        });
+
+        const btnReset = document.createElement("button");
+        btnReset.type = "button";
+        btnReset.textContent = "Reiniciar";
+        btnReset.addEventListener("click", () => {
+          const before = light.state;
+          light.state = "ROJO";
+          light.cycleCount = 0;
+          light.remainingSeconds = STATES.ROJO.durationSeconds;
+          light.history = [];
+          addHistory(`${light.location}: reiniciado (${before} → ROJO)`);
+          render();
+        });
+
+        const btnRemove = document.createElement("button");
+        btnRemove.type = "button";
+        btnRemove.textContent = "Eliminar";
+        btnRemove.addEventListener("click", () => {
+          const ok = confirm(`¿Eliminar la intersección "${light.location}"?`);
+          if (!ok) return;
+          lights = lights.filter((l) => l.id !== light.id);
+          addHistory(`Intersección eliminada: ${light.location}`);
+          render();
+        });
+
+        row.appendChild(btnAdvance);
+        row.appendChild(btnReset);
+        row.appendChild(btnRemove);
+        controls.appendChild(row);
+
+        card.appendChild(header);
+        card.appendChild(body);
+        card.appendChild(controls);
+        return card;
+      }
+
+      function resetAll() {
+        lights = DEFAULT_INTERSECTIONS.map(createLight);
+        ui.historyLog.replaceChildren();
+        addHistory("Todos los semáforos se reiniciaron a ROJO");
+        render();
+        startAutoAdvance();
+      }
+
+      function startAutoAdvance() {
+        if (timerId !== null) {
+          clearInterval(timerId);
+        }
+
+        timerId = setInterval(() => {
+          if (lights.length === 0) {
+            return;
+          }
+
+          let changed = false;
+          for (const light of lights) {
+            light.remainingSeconds -= 1;
+            if (light.remainingSeconds <= 0) {
+              advance(light);
+              changed = true;
+            }
+          }
+
+          if (changed) {
+            render();
+          } else {
+            updateCountdownOnly();
+          }
+        }, 1000);
+      }
+
+      function updateCountdownOnly() {
+        for (const light of lights) {
+          const card = ui.container.querySelector(`[data-light-id="${CSS.escape(light.id)}"]`);
+          if (!card) continue;
+          const strong = card.querySelector(".countdown strong");
+          if (strong) {
+            strong.textContent = `${light.remainingSeconds}s`;
+          }
+        }
+      }
+
+      function boot() {
+        ui = {
+          container: byId("traffic-lights-container"),
+          historyLog: byId("history-log"),
+          btnAdvanceAll: byId("btn-advance-all"),
+          btnResetAll: byId("btn-reset-all"),
+          btnAdd: byId("btn-add-light"),
+        };
+
+        ui.btnAdvanceAll.addEventListener("click", () => {
+          lights.forEach(advance);
+          addHistory("Se avanzaron todos los semáforos");
+          render();
+        });
+
+        ui.btnResetAll.addEventListener("click", resetAll);
+
+        ui.btnAdd.addEventListener("click", () => {
+          const location = prompt("Nombre de la intersección:");
+          if (!location) return;
+          const trimmed = location.trim();
+          if (!trimmed) return;
+          lights.push(createLight(trimmed));
+          addHistory("Intersección agregada: " + trimmed);
+          render();
+        });
+
+        resetAll();
+      }
+
+      document.addEventListener("DOMContentLoaded", boot);
+    </script>
+  </body>
+</html>
