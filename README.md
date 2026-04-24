@@ -1,46 +1,46 @@
 # TrafficLightStatePattern
 
-Traffic Light simulator built with the **State Pattern** (Java).
+Simulador de semáforo construido con el **patrón State** (Java).
 
-This project includes:
-- A Java console demo (`com.trafficlight.Main`)
-- A Java Swing visual simulator (`com.trafficlight.ui.SimulatorMain`)
+Este proyecto incluye:
+- Un demo por consola en Java (`com.trafficlight.Main`)
+- Un simulador visual en Java Swing (`com.trafficlight.ui.SimulatorMain`)
 
-## Java Structure
+## Estructura Java
 
-### Structure
-- `com.trafficlight.state`: State contract
-- `com.trafficlight.states`: Concrete states (`RedState`, `GreenState`, `YellowState`)
-- `com.trafficlight.context`: Context (`TrafficLight`)
-- `com.trafficlight.controller`: Controller (`TrafficLightController`)
-- `com.trafficlight.Main`: Demo entry point
-- `com.trafficlight.ui`: Swing simulator
+### Paquetes
+- `com.trafficlight.state`: Contrato del estado
+- `com.trafficlight.states`: Estados concretos (`RedState`, `GreenState`, `YellowState`)
+- `com.trafficlight.context`: Contexto (`TrafficLight`)
+- `com.trafficlight.controller`: Controlador (`TrafficLightController`)
+- `com.trafficlight.Main`: Punto de entrada del demo
+- `com.trafficlight.ui`: Simulador Swing
 
-## Run Locally (PowerShell)
+## Ejecutar en local (PowerShell)
 
-From the project root:
+Desde la raíz del proyecto:
 
 ```powershell
 mkdir out -Force | Out-Null
 javac -d out (Get-ChildItem -Recurse -Filter *.java src/main/java | ForEach-Object { $_.FullName })
 ```
 
-### Console demo
+### Demo por consola
 
 ```powershell
 java -cp out com.trafficlight.Main
 ```
 
-### Swing visual simulator
+### Simulador visual (Swing)
 
 ```powershell
 java -cp out com.trafficlight.ui.SimulatorMain
 ```
 
-## Notes
+## Notas
 
-- If you compiled previously inside `src/main/java`, you may see `.class` files there; they can be safely removed.
+- Si compilaste anteriormente dentro de `src/main/java`, puede que veas archivos `.class` ahí; se pueden eliminar sin problema.
 
-## Author / Course
+## Autor / Curso
 
 State Pattern | Universidad Cooperativa de Colombia
