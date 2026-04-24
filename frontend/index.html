@@ -381,6 +381,7 @@
           <div class="buttons">
             <button id="btn-advance-all" type="button">Avanzar todos</button>
             <button id="btn-reset-all" type="button">Reiniciar todo</button>
+            <button id="btn-toggle-auto" type="button">Pausar</button>
             <button id="btn-add-light" type="button">+ Agregar intersección</button>
           </div>
         </div>
@@ -516,6 +517,7 @@
       let lights = [];
       let ui;
       let timerId = null;
+      let autoPaused = false;
 
       function render() {
         ui.container.replaceChildren();
@@ -645,16 +647,24 @@
         lights = DEFAULT_INTERSECTIONS.map(createLight);
         ui.historyLog.replaceChildren();
         addHistory("Todos los semáforos se reiniciaron a ROJO");
+        autoPaused = false;
+        updateAutoButton();
         render();
         startAutoAdvance();
       }
 
+      function updateAutoButton() {
+        ui.btnToggleAuto.textContent = autoPaused ? "Reanudar" : "Pausar";
+      }
       function startAutoAdvance() {
         if (timerId !== null) {
           clearInterval(timerId);
         }
 
         timerId = setInterval(() => {
+          if (autoPaused) {
+            return;
+          }
           if (lights.length === 0) {
             return;
           }
@@ -694,6 +704,7 @@
           btnAdvanceAll: byId("btn-advance-all"),
           btnResetAll: byId("btn-reset-all"),
           btnAdd: byId("btn-add-light"),
+          btnToggleAuto: byId("btn-toggle-auto"),
           btnClearHistory: byId("btn-clear-history"),
           addDialog: byId("add-intersection-dialog"),
           addForm: byId("add-intersection-form"),
@@ -708,6 +719,11 @@
 
         ui.btnResetAll.addEventListener("click", resetAll);
 
+        ui.btnToggleAuto.addEventListener("click", () => {
+          autoPaused = !autoPaused;
+          updateAutoButton();
+          addHistory(autoPaused ? "Avance automático pausado" : "Avance automático reanudado");
+        });
         ui.btnClearHistory.addEventListener("click", () => {
           ui.historyLog.replaceChildren();
           addHistory("Historial limpiado");
